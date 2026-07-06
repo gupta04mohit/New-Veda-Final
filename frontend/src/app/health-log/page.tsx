@@ -22,7 +22,7 @@ export default function HealthLogPage() {
     e.preventDefault();
     setStatus('Saving...');
     try {
-      const res = await fetch('http://localhost:5000/api/health/wellness', {
+      const res = await fetch('/api/health/wellness', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

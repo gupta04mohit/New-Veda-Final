@@ -2,7 +2,7 @@
 import { useState } from "react";
 
 import { motion } from "framer-motion";
-import { Activity, Droplets, Moon, Brain, ChevronRight, Download, Watch, RefreshCw } from "lucide-react";
+import { Activity, Droplets, Moon, Brain, ChevronRight, Download, Watch, RefreshCw, Bell } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { 
@@ -38,6 +38,28 @@ const progressData = [
 
 export default function DashboardPage() {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationsEnabled(Notification.permission === "granted");
+    }
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notifications.");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotificationsEnabled(true);
+      new Notification("VedaAI Notifications Enabled!", {
+        body: "You'll now receive daily wellness reminders.",
+        icon: "/favicon.ico",
+      });
+    }
+  };
   
   const handleSyncWearable = () => {
     setIsSyncing(true);
@@ -87,20 +109,34 @@ export default function DashboardPage() {
                 <span className="text-2xl font-bold text-secondary">Low</span>
               </div>
             </div>
-            <button 
-              onClick={handleSyncWearable}
-              disabled={isSyncing}
-              className="flex items-center gap-2 bg-secondary/10 text-secondary hover:bg-secondary/20 px-4 py-2 rounded-lg font-medium transition-colors border border-secondary/20 disabled:opacity-50"
-            >
-              <Watch className="w-5 h-5" /> 
-              {isSyncing ? "Syncing..." : "Sync Wearable"}
-            </button>
-            <button 
-              onClick={handleDownloadPdf}
-              className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg font-medium transition-colors border border-primary/20"
-            >
-              <Download className="w-5 h-5" /> Download Report
-            </button>
+            
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={handleEnableNotifications}
+                disabled={notificationsEnabled}
+                className="flex items-center gap-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 px-4 py-2 rounded-lg font-medium transition-colors border border-amber-500/20 disabled:opacity-50"
+              >
+                <Bell className="w-5 h-5" /> 
+                {notificationsEnabled ? "Notifications On" : "Enable Alerts"}
+              </button>
+              
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleSyncWearable}
+                  disabled={isSyncing}
+                  className="flex items-center gap-2 bg-secondary/10 text-secondary hover:bg-secondary/20 px-4 py-2 rounded-lg font-medium transition-colors border border-secondary/20 disabled:opacity-50"
+                >
+                  <Watch className="w-5 h-5" /> 
+                  {isSyncing ? "Syncing..." : "Sync Wearable"}
+                </button>
+                <button 
+                  onClick={handleDownloadPdf}
+                  className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg font-medium transition-colors border border-primary/20"
+                >
+                  <Download className="w-5 h-5" /> Download Report
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

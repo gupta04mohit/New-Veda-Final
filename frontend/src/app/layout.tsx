@@ -11,6 +11,13 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "VedaAI — AI-Powered Preventive Healthcare OS",
   description: "Personalized Ayurvedic health recommendations, disease forecasting, and preventive care powered by advanced AI.",
+  manifest: "/manifest.json",
+  themeColor: "#0ea5e9",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "VedaAI",
+  },
 };
 
 export default function RootLayout({
