@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Leaf, ChevronDown, Menu, X, Sparkles, Heart, Brain,
   Activity, Utensils, Watch, Stethoscope, Search, Shield,
-  BookOpen, Trophy, Beaker, Video, MessageCircle, Zap, Sun, Moon
+  BookOpen, Trophy, Beaker, Video, MessageCircle, Zap, Sun, Moon, FileText
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -35,10 +35,10 @@ const navGroups = [
     label: "Wellness",
     icon: Heart,
     items: [
+      { label: "Daily Log", href: "/health-log", icon: Activity, desc: "Track health metrics" },
+      { label: "Lab Reports", href: "/reports", icon: FileText, desc: "Upload & analyze reports" },
       { label: "Meal Planner", href: "/meal-planner", icon: Utensils, desc: "Dosha-based diet plans" },
       { label: "Health Journal", href: "/journal", icon: BookOpen, desc: "Track daily wellness" },
-      { label: "Wearables", href: "/wearables", icon: Watch, desc: "Device health sync" },
-      { label: "Rewards", href: "/gamification", icon: Trophy, desc: "Streaks & badges" },
     ],
   },
   {

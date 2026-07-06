@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User as UserIcon, Leaf, Sparkles, RefreshCw } from "lucide-react";
+import { Send, Bot, User as UserIcon, Leaf, Sparkles, RefreshCw, Mic, Volume2, VolumeX } from "lucide-react";
 
 type Message = {
   id: string;
@@ -40,6 +40,24 @@ function MarkdownText({ text }: { text: string }) {
             <div key={i} className="flex items-start gap-2">
               <span className="text-primary mt-0.5 shrink-0">•</span>
               <span>{rendered.slice(line.startsWith("- ") ? 1 : 1)}</span>
+            </div>
+          );
+        }
+        
+        if (line.startsWith("Confidence:")) {
+          return (
+            <div key={i} className="mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span className="font-semibold text-amber-500">{line}</span>
+            </div>
+          );
+        }
+
+        if (line.startsWith("Sources:")) {
+          return (
+            <div key={i} className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <Leaf className="w-3 h-3 text-green-500" />
+              <span className="font-medium text-green-500">{line}</span>
             </div>
           );
         }
@@ -81,8 +99,59 @@ export default function ChatInterface() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Speech Recognition setup
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput((prev) => prev + (prev ? " " : "") + transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListen = () => {
+    if (!recognitionRef.current) {
+      alert("Voice input is not supported in your browser.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const speak = (text: string) => {
+    if (!ttsEnabled || !("speechSynthesis" in window)) return;
+    
+    // Clean markdown before speaking
+    let cleanText = text.replace(/\*\*/g, '').replace(/- /g, '').replace(/Confidence:.*$/s, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.05;
+    window.speechSynthesis.speak(utterance);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -132,6 +201,7 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
+      speak(botMsg.text);
     } catch (error) {
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -178,13 +248,22 @@ export default function ChatInterface() {
             </p>
           </div>
         </div>
-        <button
-          onClick={handleClear}
-          title="Start new conversation"
-          className="p-2 rounded-full hover:bg-white/10 transition-colors"
-        >
-          <RefreshCw className="w-5 h-5 opacity-70" />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setTtsEnabled(!ttsEnabled)}
+            title={ttsEnabled ? "Disable Voice Output" : "Enable Voice Output"}
+            className={`p-2 rounded-full transition-colors ${ttsEnabled ? "bg-white/20 text-white" : "hover:bg-white/10 opacity-50"}`}
+          >
+            {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={handleClear}
+            title="Start new conversation"
+            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <RefreshCw className="w-5 h-5 opacity-70" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -266,6 +345,14 @@ export default function ChatInterface() {
             disabled={isLoading}
             className="flex-1 rounded-2xl border border-input bg-background px-5 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-all"
           />
+          <motion.button
+            type="button"
+            onClick={toggleListen}
+            whileTap={{ scale: 0.92 }}
+            className={`p-3.5 rounded-2xl transition-colors shadow-md shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}
+          >
+            <Mic className="w-5 h-5" />
+          </motion.button>
           <motion.button
             type="submit"
             disabled={isLoading || !input.trim()}

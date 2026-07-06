@@ -1,7 +1,10 @@
 "use client";
+import { useState } from "react";
 
 import { motion } from "framer-motion";
-import { Activity, Droplets, Moon, Brain, ChevronRight } from "lucide-react";
+import { Activity, Droplets, Moon, Brain, ChevronRight, Download, Watch, RefreshCw } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { 
   ResponsiveContainer, 
   RadarChart, 
@@ -34,9 +37,38 @@ const progressData = [
 ];
 
 export default function DashboardPage() {
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const handleSyncWearable = () => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setIsSyncing(false);
+      alert("Successfully synced with Apple Health! Vitals updated.");
+    }, 2000);
+  };
+  
+  const handleDownloadPdf = async () => {
+    const dashboardElement = document.getElementById("dashboard-content");
+    if (!dashboardElement) return;
+
+    try {
+      const canvas = await html2canvas(dashboardElement, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('VedaAI_Weekly_Health_Report.pdf');
+    } catch (err) {
+      console.error("Failed to generate PDF", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div id="dashboard-content" className="max-w-7xl mx-auto space-y-8 bg-background p-4">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -44,15 +76,31 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-foreground">Welcome back, Seeker</h1>
             <p className="text-muted-foreground mt-1">Here is your daily Ayurvedic wellness summary.</p>
           </div>
-          <div className="flex gap-4">
-            <div className="bg-card border border-border rounded-lg px-4 py-2 flex flex-col items-center shadow-sm">
-              <span className="text-sm text-muted-foreground font-medium">Overall Wellness</span>
-              <span className="text-2xl font-bold text-primary">85%</span>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-4">
+              <div className="bg-card border border-border rounded-lg px-4 py-2 flex flex-col items-center shadow-sm">
+                <span className="text-sm text-muted-foreground font-medium">Daily Habit Score</span>
+                <span className="text-2xl font-bold text-primary">85/100</span>
+              </div>
+              <div className="bg-card border border-border rounded-lg px-4 py-2 flex flex-col items-center shadow-sm">
+                <span className="text-sm text-muted-foreground font-medium">Risk Score</span>
+                <span className="text-2xl font-bold text-secondary">Low</span>
+              </div>
             </div>
-            <div className="bg-card border border-border rounded-lg px-4 py-2 flex flex-col items-center shadow-sm">
-              <span className="text-sm text-muted-foreground font-medium">Risk Score</span>
-              <span className="text-2xl font-bold text-secondary">Low</span>
-            </div>
+            <button 
+              onClick={handleSyncWearable}
+              disabled={isSyncing}
+              className="flex items-center gap-2 bg-secondary/10 text-secondary hover:bg-secondary/20 px-4 py-2 rounded-lg font-medium transition-colors border border-secondary/20 disabled:opacity-50"
+            >
+              <Watch className="w-5 h-5" /> 
+              {isSyncing ? "Syncing..." : "Sync Wearable"}
+            </button>
+            <button 
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg font-medium transition-colors border border-primary/20"
+            >
+              <Download className="w-5 h-5" /> Download Report
+            </button>
           </div>
         </div>
 

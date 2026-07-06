@@ -30,6 +30,7 @@ model User {
   wearableDevices  WearableDevice[]
   appointmentsAsPatient Appointment[] @relation("PatientAppointments")
   doctorProfile    DoctorProfile?
+  medicalReports   MedicalReport[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }
@@ -159,6 +160,7 @@ model WellnessLog {
   meditationMins   Int?
   exerciseMins     Int?
   mood             String?
+  stressLevel      String?           // LOW, MEDIUM, HIGH, BURNOUT
   healthScore      Float?            // Snapshot for the day
   createdAt        DateTime          @default(now())
 
@@ -226,6 +228,20 @@ model Appointment {
   status           String            // PENDING, CONFIRMED, COMPLETED, CANCELLED
   meetingLink      String?
   prescription     String?           // JSON or Text
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model MedicalReport {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String            @db.ObjectId
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportType       String            // e.g. "CBC", "Thyroid", "Blood Test"
+  fileUrl          String?           // URL to uploaded file
+  extractedData    String?           // JSON of the raw extracted key-value pairs
+  aiInterpretation String?           // AI's simple English explanation
+  ayurvedicRec     String?           // AI's Ayurvedic recommendation based on this report
+  reportDate       DateTime          @default(now())
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }

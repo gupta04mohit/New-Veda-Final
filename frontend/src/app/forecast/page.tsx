@@ -17,38 +17,38 @@ export default function ForecastPage() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate dynamic ML Prediction Request based on inputs
-    setTimeout(() => {
-      let risk = 15;
-      let conditions = [];
-      let preventive = [];
-      const sleepNum = Number(formData.sleep || 0);
-      const waterNum = Number(formData.water || 0);
+    try {
+      const prompt = `Please forecast my disease risks based on these biomarkers: Age ${formData.age}, Weight ${formData.weight}kg, Sleep ${formData.sleep}hrs, Water ${formData.water}L, Exercise ${formData.exercise}, Stress ${formData.stress}, Symptoms: ${formData.symptoms}. Provide percentages and actionable steps.`;
       
-      if (sleepNum < 6 && sleepNum > 0) { risk += 25; conditions.push("Vata Aggravation (Sleep Deficit)"); preventive.push("Prioritize 7-8 hours of restful sleep"); }
-      if (waterNum < 2 && waterNum > 0) { risk += 15; conditions.push("Dehydration / Tissue Dryness"); preventive.push("Increase warm water intake to 2.5-3L daily"); }
-      if (formData.exercise === "Rarely") { risk += 20; conditions.push("Kapha Stagnation (Sluggish metabolism)"); preventive.push("Start with 20 mins of daily movement or Surya Namaskar"); }
-      if (formData.stress === "High") { risk += 25; conditions.push("Pitta Burnout / High Cortisol"); preventive.push("Practice 10 mins of daily Anulom Vilom (alternate nostril breathing)"); }
-      if (formData.symptoms.trim().length > 3) { risk += 10; conditions.push("Active symptoms: " + formData.symptoms); preventive.push("Consult an Ayurvedic physician for deep Nadi Pariksha (Pulse diagnosis)"); }
-
-      if (risk > 95) risk = 95;
-      if (conditions.length === 0) {
-        conditions.push("Sama Dosha (Balanced State)");
-        preventive.push("Maintain current excellent lifestyle");
-      }
-
-      setResult({
-        riskPercentage: risk,
-        category: risk < 40 ? "Low Risk" : risk < 70 ? "Moderate Risk" : "High Risk",
-        conditions,
-        preventiveMeasures: preventive
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt, history: [] })
       });
+
+      const data = await response.json();
+      
+      setResult({
+        riskPercentage: "AI Generated",
+        category: "Personalized Risk Assessment",
+        conditions: ["See AI details below"],
+        preventiveMeasures: [data.reply || data.response || "Failed to fetch ML Prediction. Please try again."]
+      });
+    } catch (err) {
+      console.error(err);
+      setResult({
+        riskPercentage: "?",
+        category: "Error",
+        conditions: ["Failed to connect to VedaAI Engine"],
+        preventiveMeasures: ["Please check your connection and try again."]
+      });
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
