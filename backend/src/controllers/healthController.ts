@@ -103,20 +103,25 @@ export const getDailyHabitScore = async (req: Request, res: Response): Promise<v
     // Basic scoring logic out of 100
     let score = 0;
     
+    const sleep = log.sleepHours || 0;
+    const water = log.waterIntake || 0;
+    const exercise = log.exerciseMins || 0;
+    const meditation = log.meditationMins || 0;
+    
     // Sleep (Target: 7-8 hours) -> 30 points
-    if (log.sleepHours >= 7 && log.sleepHours <= 9) score += 30;
-    else if (log.sleepHours >= 5) score += 15;
+    if (sleep >= 7 && sleep <= 9) score += 30;
+    else if (sleep >= 5) score += 15;
 
     // Water (Target: ~2.5L) -> 30 points
-    if (log.waterIntake >= 2.5) score += 30;
-    else if (log.waterIntake >= 1.5) score += 15;
+    if (water >= 2.5) score += 30;
+    else if (water >= 1.5) score += 15;
 
     // Exercise & Meditation -> 40 points (20 each)
-    if (log.exerciseMins >= 30) score += 20;
-    else if (log.exerciseMins > 0) score += 10;
+    if (exercise >= 30) score += 20;
+    else if (exercise > 0) score += 10;
     
-    if (log.meditationMins >= 15) score += 20;
-    else if (log.meditationMins > 0) score += 10;
+    if (meditation >= 15) score += 20;
+    else if (meditation > 0) score += 10;
 
     res.status(200).json({ score, log });
   } catch (error) {
@@ -150,6 +155,52 @@ export const uploadMedicalReport = async (req: Request, res: Response): Promise<
     res.status(201).json(report);
   } catch (error) {
     console.error('Error uploading medical report:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const predictRisk = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    const { age, weight, sleepHours, exerciseMinutes, familyHistory } = req.body;
+
+    // Call AI Service
+    const aiResponse = await fetch('http://localhost:5001/predict-risk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ age, weight, sleepHours, exerciseMinutes, familyHistory })
+    });
+
+    if (!aiResponse.ok) {
+      throw new Error(`AI Service returned ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const predictions = JSON.parse(aiData.result);
+
+    // Save predictions to DB
+    const savedPredictions = await Promise.all(
+      predictions.map((p: any) => 
+        prisma.healthPrediction.create({
+          data: {
+            userId,
+            diseaseName: p.disease || 'Unknown',
+            riskPercentage: p.percentage || 0,
+            riskCategory: (p.percentage || 0) > 60 ? 'High' : (p.percentage || 0) > 30 ? 'Medium' : 'Low',
+            preventiveMeasures: p.preventive_steps || ''
+          }
+        })
+      )
+    );
+
+    res.status(200).json(savedPredictions);
+  } catch (error) {
+    console.error('Error predicting disease risk:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };

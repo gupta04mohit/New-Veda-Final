@@ -48,7 +48,7 @@ const navGroups = [
       { label: "Marketplace", href: "/marketplace", icon: Stethoscope, desc: "Find Ayurvedic experts" },
       { label: "Telehealth", href: "/telehealth", icon: Video, desc: "Video consultations" },
       { label: "Dashboard", href: "/dashboard", icon: Activity, desc: "Health analytics" },
-      { label: "Privacy & Security", href: "/privacy", icon: Shield, desc: "Federated AI safety" },
+      { label: "Medical Board", href: "/debate", icon: Shield, desc: "Multi-Agent AI Debate" },
     ],
   },
 ];

@@ -60,16 +60,21 @@ export default function ScannerPage() {
     setErrorMsg(null);
 
     try {
-      const response = await fetch("/api/vision", {
+      // The AI service expects base64 data without the data URL prefix
+      const base64Data = previewImage.split(',')[1] || previewImage;
+      
+      const response = await fetch("http://localhost:5001/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: previewImage, type: activeTab, apiKey })
+        body: JSON.stringify({ image: base64Data, type: activeTab })
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to analyze");
+      if (!response.ok) throw new Error("Failed to analyze image");
 
-      setResult(data);
+      const data = await response.json();
+      const parsedResult = JSON.parse(data.result);
+      
+      setResult(parsedResult);
     } catch (err: any) {
       console.warn("Scanner API Warning:", err);
       setErrorMsg(err.message || "An error occurred during analysis.");
@@ -213,27 +218,58 @@ export default function ScannerPage() {
             
             {result ? (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                <div className="p-6 bg-secondary/10 border border-secondary/20 rounded-2xl">
-                  <span className="text-sm font-semibold text-secondary-foreground uppercase tracking-wider">Health Score</span>
-                  <p className="text-4xl font-bold text-foreground mt-2">{result.score}</p>
-                </div>
                 
-                <div>
-                  <h4 className="font-bold text-lg mb-3">AI Insights</h4>
-                  <ul className="space-y-2">
-                    {result.insights && result.insights.map((insight: string, idx: number) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                        <span className="text-muted-foreground">{insight}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {activeTab === "food" ? (
+                  <>
+                    <div className="p-6 bg-secondary/10 border border-secondary/20 rounded-2xl flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-semibold text-secondary-foreground uppercase tracking-wider">Estimated Calories</span>
+                        <p className="text-4xl font-bold text-foreground mt-2">{result.calories} kcal</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-semibold text-secondary-foreground uppercase tracking-wider">Inflammation Score</span>
+                        <p className="text-4xl font-bold text-destructive mt-2">{result.inflammation_score}/10</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-card border border-border rounded-xl shadow-sm">
+                        <h4 className="text-sm text-muted-foreground font-semibold uppercase tracking-wider mb-2">Macronutrients</h4>
+                        <div className="flex justify-between text-sm mb-1"><span>Carbs</span> <span className="font-medium text-foreground">{result.macros?.carbs}g</span></div>
+                        <div className="flex justify-between text-sm mb-1"><span>Protein</span> <span className="font-medium text-foreground">{result.macros?.protein}g</span></div>
+                        <div className="flex justify-between text-sm"><span>Fat</span> <span className="font-medium text-foreground">{result.macros?.fat}g</span></div>
+                      </div>
+                      <div className="p-4 bg-card border border-border rounded-xl shadow-sm">
+                        <h4 className="text-sm text-muted-foreground font-semibold uppercase tracking-wider mb-2">Ayurvedic Properties</h4>
+                        <div className="flex justify-between text-sm mb-1"><span>Dosha Effect</span> <span className="font-medium text-foreground">{result.dosha_effect}</span></div>
+                      </div>
+                    </div>
 
-                <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl mt-6">
-                  <h4 className="font-bold text-lg mb-2 text-primary">Recommendation</h4>
-                  <p className="text-foreground">{result.recommendation}</p>
-                </div>
+                    <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl mt-6">
+                      <h4 className="font-bold text-lg mb-2 text-primary">AI Health Advice</h4>
+                      <p className="text-foreground text-sm leading-relaxed">{result.advice}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-6 bg-secondary/10 border border-secondary/20 rounded-2xl">
+                      <span className="text-sm font-semibold text-secondary-foreground uppercase tracking-wider">Health Score</span>
+                      <p className="text-4xl font-bold text-foreground mt-2">{result.score || 'N/A'}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-bold text-lg mb-3">AI Insights</h4>
+                      <ul className="space-y-2">
+                        {result.insights && result.insights.map((insight: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                            <span className="text-muted-foreground">{insight}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )}
               </motion.div>
             ) : (
               <div className="h-full min-h-[250px] flex flex-col items-center justify-center text-muted-foreground text-center">

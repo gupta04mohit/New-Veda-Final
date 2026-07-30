@@ -492,7 +492,7 @@ export default function Home() {
             ))}
           </div>
           <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2025 VedaAI. All rights reserved.</p>
+            <p>© 2026 VedaAI. All rights reserved.</p>
             <p className="flex items-center gap-1">Made with <Heart className="w-4 h-4 text-rose-500 fill-rose-500" /> and ancient wisdom</p>
           </div>
         </div>

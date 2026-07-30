@@ -1,10 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { motion } from "framer-motion";
 import { Activity, Droplets, Moon, Brain, ChevronRight, Download, Watch, RefreshCw, Bell } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import DailyPlan, { PlanItem } from "@/components/DailyPlan";
+import HealthTimeline from "@/components/HealthTimeline";
 import { 
   ResponsiveContainer, 
   RadarChart, 
@@ -26,14 +28,19 @@ const doshaData = [
   { subject: 'Kapha', A: 86, fullMark: 150 },
 ];
 
-const progressData = [
-  { day: 'Mon', score: 65 },
-  { day: 'Tue', score: 70 },
-  { day: 'Wed', score: 68 },
-  { day: 'Thu', score: 75 },
-  { day: 'Fri', score: 82 },
-  { day: 'Sat', score: 85 },
-  { day: 'Sun', score: 90 },
+const mockLogs = [
+  { date: '2026-07-01', waterIntake: 1.5, sleepHours: 6, stressLevel: 'HIGH', healthScore: 72 },
+  { date: '2026-07-02', waterIntake: 2.0, sleepHours: 7, stressLevel: 'MEDIUM', healthScore: 78 },
+  { date: '2026-07-03', waterIntake: 2.5, sleepHours: 8, stressLevel: 'LOW', healthScore: 85 },
+  { date: '2026-07-04', waterIntake: 2.8, sleepHours: 7.5, stressLevel: 'LOW', healthScore: 88 },
+  { date: '2026-07-05', waterIntake: 3.0, sleepHours: 8, stressLevel: 'LOW', healthScore: 92 },
+];
+
+const mockPlan: PlanItem[] = [
+  { id: '1', time: '07:00 AM', activity: 'Warm Lemon Water', type: 'DIET', reasoning: 'Kickstarts digestion and flushes toxins.' },
+  { id: '2', time: '08:00 AM', activity: '30 min Yoga', type: 'EXERCISE', reasoning: 'Calms Vata dosha and improves flexibility.' },
+  { id: '3', time: '01:00 PM', activity: 'Warm, Cooked Lunch', type: 'DIET', reasoning: 'Pitta is highest at midday; optimal digestion.' },
+  { id: '4', time: '10:00 PM', activity: 'Digital Detox', type: 'SLEEP', reasoning: 'Ensures deep sleep and reduces mental stimulation.' },
 ];
 
 export default function DashboardPage() {
@@ -156,7 +163,7 @@ export default function DashboardPage() {
                   <PolarGrid stroke="var(--border)" />
                   <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--foreground)", fontSize: 12 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
-                  <Radar name="Dosha" dataKey="A" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.4} />
+                  <Radar name="Dosha" dataKey="A" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.4} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -171,18 +178,7 @@ export default function DashboardPage() {
           >
             <h3 className="text-lg font-semibold mb-4">Weekly Progress</h3>
             <div className="flex-1 min-h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={progressData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                  <RechartsTooltip 
-                    contentStyle={{ backgroundColor: "var(--card)", borderColor: "var(--border)", borderRadius: "8px" }}
-                    itemStyle={{ color: "var(--primary)" }}
-                  />
-                  <Line type="monotone" dataKey="score" stroke="var(--primary)" strokeWidth={3} dot={{ r: 4, fill: "var(--primary)" }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <HealthTimeline logs={mockLogs} />
             </div>
           </motion.div>
 
@@ -197,55 +193,7 @@ export default function DashboardPage() {
             transition={{ delay: 0.2 }}
             className="bg-card border border-border rounded-2xl p-6 shadow-sm"
           >
-            <h3 className="text-lg font-semibold mb-6">Daily Habits Tracker</h3>
-            <div className="space-y-6">
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-                    <Droplets className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Water Intake</p>
-                    <p className="text-sm text-muted-foreground">1.5L / 3L</p>
-                  </div>
-                </div>
-                <div className="w-32 bg-muted rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '50%' }}></div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
-                    <Moon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Sleep</p>
-                    <p className="text-sm text-muted-foreground">6.5h / 8h</p>
-                  </div>
-                </div>
-                <div className="w-32 bg-muted rounded-full h-2">
-                  <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '80%' }}></div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Yoga / Exercise</p>
-                    <p className="text-sm text-muted-foreground">30m / 45m</p>
-                  </div>
-                </div>
-                <div className="w-32 bg-muted rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '66%' }}></div>
-                </div>
-              </div>
-
-            </div>
+            <DailyPlan dosha="Vata" plan={mockPlan} />
           </motion.div>
 
           <motion.div 

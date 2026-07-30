@@ -22,29 +22,33 @@ export default function ForecastPage() {
     setLoading(true);
     
     try {
-      const prompt = `Please forecast my disease risks based on these biomarkers: Age ${formData.age}, Weight ${formData.weight}kg, Sleep ${formData.sleep}hrs, Water ${formData.water}L, Exercise ${formData.exercise}, Stress ${formData.stress}, Symptoms: ${formData.symptoms}. Provide percentages and actionable steps.`;
-      
-      const response = await fetch("/api/chat", {
+      const response = await fetch("http://localhost:5001/predict-risk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, history: [] })
+        body: JSON.stringify({ 
+          age: Number(formData.age), 
+          weight: Number(formData.weight), 
+          sleepHours: Number(formData.sleep), 
+          exerciseMinutes: formData.exercise === "Daily" ? 45 : formData.exercise === "3-4 times/week" ? 20 : 5, 
+          familyHistory: formData.symptoms ? [formData.symptoms] : [] 
+        })
       });
 
+      if (!response.ok) throw new Error("Failed to fetch ML Prediction");
+
       const data = await response.json();
+      const parsedData = JSON.parse(data.result);
       
+      // Expected array: [{ disease, percentage, reason, preventive_steps }]
       setResult({
-        riskPercentage: "AI Generated",
         category: "Personalized Risk Assessment",
-        conditions: ["See AI details below"],
-        preventiveMeasures: [data.reply || data.response || "Failed to fetch ML Prediction. Please try again."]
+        predictions: parsedData
       });
     } catch (err) {
       console.error(err);
       setResult({
-        riskPercentage: "?",
         category: "Error",
-        conditions: ["Failed to connect to VedaAI Engine"],
-        preventiveMeasures: ["Please check your connection and try again."]
+        predictions: [{ disease: "Connection Error", percentage: 0, reason: "Failed to connect to VedaAI Engine", preventive_steps: "Please check your connection." }]
       });
     } finally {
       setLoading(false);
@@ -149,31 +153,29 @@ export default function ForecastPage() {
                   <h3 className="text-2xl font-bold text-foreground mb-2">Analysis Complete</h3>
                   <div className="inline-flex items-center gap-2 bg-secondary/20 text-secondary-foreground px-4 py-2 rounded-full font-semibold">
                     <AlertTriangle className="w-5 h-5 text-secondary" />
-                    {result.category} ({result.riskPercentage}%)
+                    {result.category}
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold flex items-center gap-2 mb-3">
-                    <Activity className="w-5 h-5 text-destructive" /> Potential Risks
-                  </h4>
-                  <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                    {result.conditions.map((c: string, i: number) => <li key={i}>{c}</li>)}
-                  </ul>
-                </div>
-
-                <div className="bg-primary/10 rounded-xl p-4 border border-primary/20">
-                  <h4 className="font-semibold flex items-center gap-2 mb-3 text-primary">
-                    <ShieldCheck className="w-5 h-5" /> Preventive Measures
-                  </h4>
-                  <ul className="space-y-2">
-                    {result.preventiveMeasures.map((m: string, i: number) => (
-                      <li key={i} className="flex gap-2 text-sm">
-                        <span className="text-primary mt-1">•</span>
-                        <span>{m}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="space-y-4">
+                  {result.predictions?.map((pred: any, i: number) => (
+                    <div key={i} className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-lg text-primary">{pred.disease}</h4>
+                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${pred.percentage > 50 ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                          {pred.percentage}% Risk
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{pred.reason}</p>
+                      
+                      <div className="bg-background rounded-lg p-3 border border-border">
+                        <h5 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-green-500" /> Preventive Steps
+                        </h5>
+                        <p className="text-sm text-foreground">{pred.preventive_steps}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

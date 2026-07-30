@@ -11,7 +11,7 @@ import enterpriseRoutes from './routes/enterpriseRoutes';
 import journalRoutes from './routes/journalRoutes';
 import tripRoutes from './routes/tripRoutes';
 import healthRoutes from './routes/healthRoutes';
-
+import reportRoutes from './routes/reportRoutes';
 dotenv.config();
 
 const app = express();
@@ -129,6 +129,7 @@ app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/reports', reportRoutes);
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
