@@ -1,0 +1,12 @@
+Frontend .env file 
+
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+
+
+Backend .env file 
+
+DATABASE_URL=""
+MONGO_URI="mongodb+srv://gupta04mohit_vedaAi:VedaAi@cluster0.abpcwsk.mongodb.net/vedaai?appName=Cluster0"
+GEMINI_API_KEY=""
+GOOGLE_AI_API_KEY=""
