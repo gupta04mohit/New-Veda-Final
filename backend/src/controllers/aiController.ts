@@ -9,7 +9,7 @@ export const chatWithVeda = async (req: Request, res: Response): Promise<void> =
     const userId = (req as any).user?.id;
 
     let userContext = {};
-    let chatHistory = [];
+    let chatHistory: any[] = [];
     if (userId) {
       // Fetch Profile & Dosha
       const profile = await prisma.profile.findUnique({ where: { userId } });
